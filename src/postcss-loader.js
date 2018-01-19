@@ -1,5 +1,6 @@
 import path from 'path'
 import postcss from 'postcss'
+import url from "postcss-url"
 import findPostcssConfig from 'postcss-load-config'
 import reserved from 'reserved-words'
 import { localRequire, normalizePath } from './utils'
@@ -96,7 +97,11 @@ export default {
       postcssOpts.map.prev = typeof map === 'string' ? JSON.parse(map) : map
     }
 
-    const res = await postcss(plugins).process(code, postcssOpts)
+    const res = await postcss(plugins)
+      .use(url({
+        url: 'inline'
+      }))
+      .process(code, postcssOpts)
 
     let output = ''
     let extracted
@@ -125,14 +130,14 @@ export default {
     } else {
       output += `var css = ${JSON.stringify(res.css)};\nexport default ${
         options.modules ? JSON.stringify(modulesExported[this.id]) : 'css'
-      };`
+        };`
     }
     if (!shouldExtract && shouldInject) {
       output += `\n__$$styleInject(css${
         Object.keys(options.inject).length > 0 ?
           `,${JSON.stringify(options.inject)}` :
           ''
-      });`
+        });`
     }
 
     return {
